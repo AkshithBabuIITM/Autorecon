@@ -2,7 +2,7 @@
 import os
 import sys
 import atexit
-
+#colors
 R = '\033[31m'  # red
 G = '\033[32m'  # green
 C = '\033[36m'  # cyan
