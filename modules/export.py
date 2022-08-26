@@ -1,32 +1,16 @@
 #!/usr/bin/env python3
-
 import os
-import csv
-import lxml.etree
-import xml.etree.ElementTree as ET
-
 R = '\033[31m' # red
 G = '\033[32m' # green
 C = '\033[36m' # cyan
 W = '\033[0m'  # white
 Y = '\033[33m' # yellow
 
-root = ''
-
 def export(output, data):
     if output['format'] != 'txt':
         if output['export'] == True:
-            fname = output['file']
-            with open(fname, 'w') as outfile:
-                if output['format'] == 'xml':
-                    print(Y + '[!]' + C + ' Exporting to ' + W + fname + '\n')
-                    xml_export(output, data, outfile)
-                if output['format'] == 'csv':
-                    print(Y + '[!]' + C + ' Exporting to ' + W + fname + '\n')
-                    csv_export(output, data, outfile)
-                if all([output['format'] != 'xml', output['format'] != 'csv']):
-                    print(R + '[-]' + C + ' Invalid Output Format, Valid Formats : ' + W + 'txt, xml, csv')
-                    exit()
+            print(R + '[-]' + C + ' Invalid Output Format, Valid Formats : ' + W + 'txt, xml, csv')
+            exit()
         else:
             pass
     elif output['format'] == 'txt':
@@ -67,114 +51,14 @@ def txt_export(data, outfile):
             outfile.write(k)
             outfile.write('\n' + '#'*len(k) + '\n')
             txt_unpack(outfile, k, v)
-
-        elif k.startswith('Type'):
-            outfile.write('\n' + data[k] + '\n')
-            outfile.write('='*len(data[k]) + '\n\n')
-            
         else:
             outfile.write(str(k))
             outfile.write(' : ')
             outfile.write(str(v) + '\n')
 
-def xml_export(output, data, outfile):
-    global root
-    root = ET.Element('finalrecon')
-    modules = ET.Element('modules')
-
-    for k, v in data.items():
-        if k.startswith('module'):
-            module = k.split('module-')
-            module = module[1]
-            module_name = ET.Element('moduleName')
-            module_name.text = module
-            modules.append(module_name)
-            if isinstance(v, dict):
-                for key, val in v.items():
-                    data_pair = ET.Element('dataPair')
-                    data_key = ET.Element('dataKey')
-                    data_key.text = key
-                    data_pair.append(data_key)
-                    if isinstance(val, list):
-                        for item in val:
-                            if isinstance(item, list):
-                                data_val = ET.Element('dataVal')
-                                data_val.text = '{},{},{}'.format(*item)
-                                data_pair.append(data_val)
-                            else:
-                                data_val = ET.Element('dataVal')
-                                data_val.text = str(item)
-                                data_pair.append(data_val)
-                        module_name.append(data_pair)
-                    else:
-                        data_val = ET.Element('dataVal')
-                        data_val.text = str(val)
-                        data_pair.append(data_val)
-                        module_name.append(data_pair)
-
-    root.append(modules)
-    if output['format'] == 'xml':
-        tree = ET.ElementTree(root)
-        tree.write(outfile.name,
-            encoding='utf8', 
-            xml_declaration=True, 
-            default_namespace=None, 
-            method='xml')
-    else:
-        pass
-
-def csv_export(output, data, outfile):
-    global root
-    key_list = []
-    val_list = []
-
-    xml_export(output, data, outfile)
-
-    root_str = ET.tostring(root, method='xml').decode()
-    xml_data = lxml.etree.fromstring(root_str)
-    modules = xml_data.find('modules')
-    module_names = modules.findall('moduleName')
-
-    for module_name in module_names:
-        module_name_str = module_name.text
-        dataPairs = module_name.findall('dataPair')
-        
-        for dataPair in dataPairs:
-            dataKey = dataPair.find('dataKey')
-            dataKey = dataKey.text
-            key_list.append(dataKey)
-            dataVals = dataPair.findall('dataVal')
-            if len(dataVals) == 1:
-                dataVals = dataVals[0].text
-                dataVals = dataVals.replace(',', '/').replace(';', '/')
-                val_list.append(dataVals)
-            else:
-                data_str_list = []
-                for item in dataVals:
-                    item = item.text
-                    item = item.replace(',', '/').replace(';', '/')
-                    data_str_list.append(item)
-                val_list.append(data_str_list)
-        
-        with open(outfile.name, 'a') as outfile:
-            writer = csv.writer(outfile, delimiter=';')
-            key_list.insert(0,'Module')
-            writer.writerow(key_list)
-            val_list.insert(0, module_name_str)
-
-            val_str_list = []
-            
-            for item in val_list:
-                if isinstance(item, str) == False and isinstance(item, list) == False:
-                    item = item.text 
-                if isinstance(item, list) == True:
-                    item = '\n'.join(item)
-                else:
-                    pass
-                val_str_list.append(item)
-            writer.writerow(val_str_list)
-
-            for i in range(1,5):
-                writer.writerow([])
-            key_list = []
-            val_list = []
+#{'module-autorecon': {'Date': '2022-08-26', 'Target': 'https://civil.iitm.ac.in','IP Address': '10.24.0.190', 'Start Time': '09:55:28 AM', 'End Time': '09:55:39 AM', 'Completion Time': '0:00:11.268183'}, 
+# 'module-Headers': {'Date': 'Fri, 26 Aug 2022 13:55:29 GMT', 'Server': 'Apache/2.4.18 (Ubuntu)', 'Set-Cookie': 'PHPSESSID=ah0ot9m059dhaltln94l9dip74; path=/, cookiesession1=678B2867A48304558441CAC8E9FBD261;Expires=Sat, 26 Aug 2023 13:55:29 GMT;Path=/;HttpOnly', 'Expires': 'Thu, 19 Nov 1981 08:52:00 GMT', 'Cache-Control': 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0', 'Pragma': 'no-cache', 'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip', 'Content-Length': '37030', 'Keep-Alive': 'timeout=5, max=100', 'Connection': 'Keep-Alive', 'Content-Type': 'text/html; charset=UTF-8'}, 
+# 'module-Whois Lookup': {'Error': 'IPv4 address 10.24.0.190 is already defined as Private-Use Networks via RFC 1918.'},
+# 'module-DNS Enumeration': {'dns': ['iitm.ac.in.             21138   IN      NS      dns2.iitm.ac.in.', 'iitm.ac.in.             21103   IN      MX      30 mailx3.iitm.ac.in.', 'iitm.ac.in.             21138   IN      MX      40 mailx4.iitm.ac.in.', 'iitm.ac.in.             21138   IN      MX      30 mailx3.iitm.ac.in.', 'iitm.ac.in.             21138   IN      NS      dns1.iitm.ac.in.', 'iitm.ac.in.             21138   IN      NS      dns3.iitm.ac.in.', 'iitm.ac.in.             21138   IN      TXT     "v=spf1 ip4:103.158.42.46/32 ip4:103.158.42.45/32 ip4:103.158.42.47/32 ip4:103.158.42.48/32 -all"', 'iitm.ac.in.             21138   IN      SOA     dns1.iitm.ac.in. root.dns1.iitm.ac.in. 2022082302 10800 3600 1814400 86400', 'iitm.ac.in.             21103   IN      MX      20 mailx2.iitm.ac.in.', 'iitm.ac.in.             21138   IN      MX      20 mailx2.iitm.ac.in.', 'iitm.ac.in.             21103   IN      MX      40 mailx4.iitm.ac.in.', 'iitm.ac.in.             1800    IN      SOA     dns1.iitm.ac.in. root.dns1.iitm.ac.in. 2022082302 10800 3600 1814400 86400', 'iitm.ac.in.             1338    IN      SOA     dns1.iitm.ac.in. root.dns1.iitm.ac.in. 2022082302 10800 3600 1814400 86400'], 'dmarc': ['DMARC Record Not Found!']}, 
+# 'module-Subdomain Enumeration': {'Links': ['web.ee.iitm.ac.in', 'onlinedegree.iitm.ac.in', 'remote.iitm.ac.in', 'blog.techsoc.iitm.ac.in', 'diploma.iitm.ac.in', 'datacommons.iitm.ac.in', 'www.ioas.iitm.ac.in', 'ee5332.dev.iitm.ac.in', 'discourse.onlinedegree.iitm.ac.in', 'tcoe.iitm.ac.in', 'jup.ee5332.dev.iitm.ac.in', 'appdev.onlinedegree.iitm.ac.in', 'ioas.iitm.ac.in', 'www.joyofgiving.alumni.iitm.ac.in', 'essrv005.iitm.ac.in', 'ai4bharat.iitm.ac.in', 'ftp.iitm.ac.in', 'joyofgiving.alumni.iitm.ac.in', 'essrv006.iitm.ac.in', 'www.gjfund.iitm.ac.in', 'techsoc.iitm.ac.in', '*.iitm.ac.in', 'autodiscover.iitm.ac.in', 'ntcpwc.iitm.ac.in', 'biomimicry.iitm.ac.in', 'www.biomimicry.iitm.ac.in', 'pace.cse.iitm.ac.in', 'www.osa.iitm.ac.in', 'alumni.iitm.ac.in', 'moodle.respark.iitm.ac.in', 'giftshop.iitm.ac.in', 'backend.seek.onlinedegree.iitm.ac.in', 'seek.onlinedegree.iitm.ac.in', 'arjuna.iitm.ac.in', 'heritage.iitm.ac.in', 'bishma.iitm.ac.in', 'leap.respark.iitm.ac.in', 'gjfund.iitm.ac.in', 'placement.iitm.ac.in', 'shaastramag-uat.iitm.ac.in', 'www.cse.iitm.ac.in', 'coursesnew.iitm.ac.in', 'eegpu.dev.iitm.ac.in', 'admissions.ge.iitm.ac.in', 'www.backend.seek.onlinedegree.iitm.ac.in', 'research.iitm.ac.in', 'shaastramag.iitm.ac.in', 'www.publications.iitm.ac.in', 'moodle.ee5332.dev.iitm.ac.in', 'drone.ee2003.dev.iitm.ac.in', 'app.onlinedegree.iitm.ac.in', 'publications.iitm.ac.in', 'theory.cse.iitm.ac.in', 'bbb.evc.iitm.ac.in', 'periurban.iitm.ac.in', 'asr.iitm.ac.in', 'www.leap.respark.iitm.ac.in', 'iitm.ac.in', 'www.onlinedegree.iitm.ac.in', 'ee2003.dev.iitm.ac.in', 'www.oir.iitm.ac.in', '10x.respark.iitm.ac.in', 'r2d2.iitm.ac.in', 'courses.iitm.ac.in', 'csie.iitm.ac.in', 'instispice.iitm.ac.in', 'git.ee2003.dev.iitm.ac.in', 'hc-uat.iitm.ac.in', 'pbl.biotech.iitm.ac.in', 'osa.iitm.ac.in', 'app.diploma.iitm.ac.in', 'e-verify.acservices.iitm.ac.in', 'essrv004.iitm.ac.in', 'email.iitm.ac.in', 'keepitflowing.alumni.iitm.ac.in', 'nakula.iitm.ac.in', 'www.ee.iitm.ac.in'], 'Total Unique Sub Domains Found': '77'}, 'module-Traceroute': {'Result': [['1', '192.168.0.1', 'dlinkrouter.iitmlan'], ['2', '10.22.23.254', 'Unknown'], ['3', '10.25.100.1', 'Unknown'], ['4', '10.24.0.190', 'Unknown']], 'Protocol': 'UDP', 'Port': '33434', 'Timeout': '1.0'},
+# 'module-Port Scan': {'80': 'http', '443': 'https'}}

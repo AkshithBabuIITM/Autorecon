@@ -28,3 +28,6 @@ def headers(target, output, data):
 
 def header_output(output, data, result):
 	data['module-Headers'] = result
+
+# Sample Response Header: 
+# {'Date': 'Wed, 24 Aug 2022 11:25:14 GMT', 'Server': 'Apache/2.4.18 (Ubuntu)', 'Set-Cookie': 'PHPSESSID=rtum5jsephdrt2t4rmlemaism5; path=/, cookiesession1=678B2867AC7668326C41699E66F743C6;Expires=Thu, 24 Aug 2023 11:25:14 GMT;Path=/;HttpOnly', 'Expires': 'Thu, 19 Nov 1981 08:52:00 GMT', 'Cache-Control': 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0', 'Pragma': 'no-cache', 'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip', 'Content-Length': '37030', 'Keep-Alive': 'timeout=5, max=100', 'Connection': 'Keep-Alive', 'Content-Type': 'text/html; charset=UTF-8'}

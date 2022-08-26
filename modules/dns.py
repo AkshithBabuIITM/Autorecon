@@ -22,7 +22,6 @@ def dnsrec(domain, output, data):
 		ans = ans.split('\n')
 		full_ans.extend(ans)
 	full_ans = set(full_ans)
-
 	dns_found = []
 
 	for entry in full_ans:
@@ -40,32 +39,20 @@ def dnsrec(domain, output, data):
 		print(R + '[-]' + C + ' DNS Records Not Found!' + W)
 		if output != 'None':
 			result.setdefault('dns', ['DNS Records Not Found'])
-	
-	dmarc_target = '_dmarc.' + domain
-	q = dnslib.DNSRecord.question(dmarc_target, 'TXT')
-	pkt = q.send('8.8.8.8', 53, tcp='UDP')
-	dmarc_ans = dnslib.DNSRecord.parse(pkt)
-	dmarc_ans = str(dmarc_ans)
-	dmarc_ans = dmarc_ans.split('\n')
-	dmarc_found = []
-
-	for entry in dmarc_ans:
-		if entry.startswith('_dmarc') == True:
-			dmarc_found.append(entry)
-		else:
-			pass
-	if len(dmarc_found) != 0:
-		for entry in dmarc_found:
-			print(G + '[+]' + C + ' {}'.format(entry) + W)
-			if output != 'None':
-				result.setdefault('dmarc', []).append(entry)
-	else:
-		print('\n' + R + '[-]' + C + ' DMARC Record Not Found!' + W)
-		if output != 'None':
-			result.setdefault('dmarc', ['DMARC Record Not Found!'])
 
 	if output != 'None':
 		dns_export(output, data, result)
 
 def dns_export(output, data, result):
 	data['module-DNS Enumeration'] = result
+
+# ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 33869
+# ;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+# ;; QUESTION SECTION:
+# ;iitm.ac.in.                    IN      TXT
+# ;; ANSWER SECTION:
+# iitm.ac.in.             21600   IN      TXT     "v=spf1 ip4:103.158.42.46/32 ip4:103.158.42.45/32 ip4:103.158.42.47/32 ip4:103.158.42.48/32 -all"
+# iitm.ac.in.             21600   IN      SOA     dns1.iitm.ac.in. root.dns1.iitm.ac.in. 2022082302 10800 3600 1814400 86400
+# iitm.ac.in.             21600   IN      NS      dns1.iitm.ac.in.
+# iitm.ac.in.             21600   IN      NS      dns2.iitm.ac.in.
+

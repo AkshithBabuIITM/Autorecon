@@ -14,7 +14,7 @@ def ps(ip, output, data):
 	result = {}
 
 	print('\n' + Y + '[!]' + Y + ' Starting Port Scan...' + W + '\n')
-	print(G + '[+]' + C + ' Testing Top 3000 Ports...' + W + '\n')
+	print(G + '[+]' + C + ' Testing Top 1000 Ports...' + W + '\n')
 	for port in range(1,1000):
 		t = threading.Thread(target=sock_conn, args=[ip, port, output, result])
 		t.daemon = True

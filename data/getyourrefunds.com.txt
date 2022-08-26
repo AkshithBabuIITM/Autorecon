@@ -1,0 +1,27 @@
+
+#########
+autorecon
+#########
+
+Date : 2022-08-24
+
+Target : https://getyourrefunds.com
+
+IP Address : 159.65.149.158
+
+Start Time : 08:35:01 AM
+
+End Time : 08:35:14 AM
+
+Completion Time : 0:00:12.724208
+
+#####################
+Subdomain Enumeration
+#####################
+
+Links
+=====
+
+getyourrefunds.com
+
+Total Unique Sub Domains Found : 1

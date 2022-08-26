@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import os
 import sys
-import atexit
-#colors
+
+
 R = '\033[31m'  # red
 G = '\033[32m'  # green
 C = '\033[36m'  # cyan
 W = '\033[0m'   # white
 
-home = os.getenv('HOME')
-pid_path = '/.local/share/autorecon/autorecon.pid'
-usr_data =  '/.local/share/autorecon/dumps/'
+pt = os.getcwd()
+pid_path = pt+'/autorecon.pid'
+usr_data =  pt+'/data/'
 conf_path = '/.config/autorecon'
 path_to_script = os.path.dirname(os.path.realpath(__file__))
 src_conf_path = path_to_script + '/conf/'
@@ -22,7 +22,7 @@ if os.path.isfile(pid_path):
 	with open(pid_path, 'r') as pidfile:
 		pid = pidfile.read()
 	print(f'{G}[+] {C}PID :{W} {str(pid)}')
-	print(f'{G}[>] {C}If Autorecon crashed, execute :{W} rm {pid_path}')
+	print(f'{G}[>] {C}If Autorecon crashed, execute :{W} rm autorecon.pid')
 	sys.exit(1)
 else:
 	os.makedirs(os.path.dirname(pid_path), exist_ok=True)
@@ -37,9 +37,7 @@ else:
 
 import argparse
 
-version = '1.1.3'
-
-parser = argparse.ArgumentParser(description=f'Autorecon for bug bounty automation')
+parser = argparse.ArgumentParser(description=f'Auto Reconnaissance')
 parser.add_argument('url', help='Target URL')
 parser.add_argument('--headers', help='Header Information', action='store_true')
 parser.add_argument('--whois', help='Whois Lookup', action='store_true')
@@ -52,25 +50,15 @@ parser.add_argument('--ps', help='Fast Port Scan', action='store_true')
 parser.add_argument('--full', help='Full Recon', action='store_true')
 
 ext_help = parser.add_argument_group('Extra Options')
-ext_help.add_argument('-t', type=int, help='Number of Threads [ Default : 30 ]')
 ext_help.add_argument('-T', type=float, help='Request Timeout [ Default : 30.0 ]')
-ext_help.add_argument('-r', action='store_true', help='Allow Redirect [ Default : False ]')
-ext_help.add_argument('-s', action='store_false', help='Toggle SSL Verification [ Default : True ]')
-ext_help.add_argument('-sp', type=int, help='Specify SSL Port [ Default : 443 ]')
-ext_help.add_argument('-d', help='Custom DNS Servers [ Default : 1.1.1.1 ]')
-ext_help.add_argument('-e', help='File Extensions [ Example : txt, xml, php ]')
-ext_help.add_argument('-m', help='Traceroute Mode [ Default : ICMP ] [ Available : TCP, ICMP ]')
+ext_help.add_argument('-m', help='Traceroute Mode [ Default : UDP ]')
 ext_help.add_argument('-p', type=int, help='Port for Traceroute [ Default : 80 / 33434 ]')
 ext_help.add_argument('-tt', type=float, help='Traceroute Timeout [ Default : 1.0 ]')
-ext_help.add_argument('-o', help='Export Output [ Default : txt ] [ Available : xml, csv ]')
+ext_help.add_argument('-o', help='Export Output [ Default : txt ]')
 ext_help.set_defaults(
 	t=30,
 	T=30.0,
 	r=False,
-	s=True,
-	sp=443,
-	d='1.1.1.1',
-	e='',
 	m='UDP',
 	p=33434,
 	tt=1.0,
@@ -86,19 +74,12 @@ except SystemExit:
 target = args.url
 headinfo = args.headers
 whois = args.whois
-crawl = args.crawl
 dns = args.dns
+subd = args.sub
 trace = args.trace
-dirrec = args.dir
 pscan = args.ps
 full = args.full
-threads = args.t
 tout = args.T
-redir = args.r
-sslp = args.sp
-dserv = args.d
-filext = args.e
-subd = args.sub
 mode = args.m
 port = args.p
 tr_tout = args.tt
@@ -132,7 +113,6 @@ def banner():
 	
 
 def full_recon():
-	from modules.crawler import crawler
 	from modules.headers import headers
 	from modules.dns import dnsrec
 	from modules.traceroute import troute
@@ -164,8 +144,8 @@ try:
 	else:
 		pass
 
-	print(f'{G}[+] {C}Target : {W}{target}')
-	ext = tldextract.extract(target)
+	print(f'{G}[+] {C}Target : {W}{target}') 
+	ext = tldextract.extract(target)   #ExtractResult(subdomain='civil', domain='iitm', suffix='ac.in')
 	domain = ext.registered_domain
 	hostname = '.'.join(part for part in ext if part)
 
@@ -184,7 +164,6 @@ try:
 
 	start_time = datetime.datetime.now()
 
-	meta.update({'Version': str(version)})
 	meta.update({'Date': str(datetime.date.today())})
 	meta.update({'Target': str(target)})
 	meta.update({'IP Address': str(ip)})
@@ -230,7 +209,7 @@ try:
 
 	if trace is True:
 		from modules.traceroute import troute
-		if mode == 'TCP' and port == 33434:
+		if mode == 'TCP':
 			port = 80
 			troute(ip, mode, port, tr_tout, output, data)
 		else:
@@ -240,7 +219,7 @@ try:
 		from modules.portscan import ps
 		ps(ip, output, data)
 
-	if any([full, headinfo, whois, crawl, dns, subd, trace, pscan]) is not True:
+	if any([full, headinfo, whois, dns, subd, trace, pscan]) is not True:
 		print(f'\n{R}[-] Error : {C}At least One Argument is Required with URL{W}')
 		output = 'None'
 		os.remove(pid_path)
@@ -248,18 +227,16 @@ try:
 
 	end_time = datetime.datetime.now() - start_time
 	print(f'\n{G}[+] {C}Completed in {W}{str(end_time)}\n')
-
-	@atexit.register
-	def call_export():
-		meta.update({'End Time': str(datetime.datetime.now().strftime('%I:%M:%S %p'))})
-		meta.update({'Completion Time': str(end_time)})
-		if output != 'None':
-			output['export'] = True
-			export(output, data)
-
+	meta.update({'End Time': str(datetime.datetime.now().strftime('%I:%M:%S %p'))})
+	meta.update({'Completion Time': str(end_time)})
+	if output != 'None':
+		output['export'] = True
+		export(output, data)
 	os.remove(pid_path)
 	sys.exit()
 except KeyboardInterrupt:
 	print(f'{R}[-] {C}Keyboard Interrupt.{W}\n')
 	os.remove(pid_path)
 	sys.exit(130)
+
+
